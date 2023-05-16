@@ -1,0 +1,13 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="InitialVersion:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/InitialVersion_jar</output-path>
+    <root id="archive" name="InitialVersion.jar">
+      <element id="module-output" name="InitialVersion" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/library/junit-4.12.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/library/hutool-all-5.8.18.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/library/javafx-base-17.0.7-win.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/library/javafx-controls-17.0.7-win.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/library/javafx-graphics-17.0.7-win.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

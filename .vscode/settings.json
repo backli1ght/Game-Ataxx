@@ -1,0 +1,10 @@
+{
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "library/hutool-all-5.8.18.jar",
+        "library/javafx-base-17.0.7-win.jar",
+        "library/javafx-controls-17.0.7-win.jar",
+        "library/javafx-graphics-17.0.7-win.jar",
+        "library/junit-4.12.jar"
+    ]
+}
