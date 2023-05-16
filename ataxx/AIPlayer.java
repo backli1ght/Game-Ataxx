@@ -12,8 +12,6 @@ import static java.lang.Math.min;
 
 /**
  * A Player that computes its own moves.
- *
- * @author Qingyi Fang
  */
 class AIPlayer extends Player {
 
@@ -69,7 +67,7 @@ class AIPlayer extends Player {
         // 这个评估函数读与红色玩家来说是越大越好，对于蓝色玩家来说是越小越好
         // System.out.println(PieceState.EMPTY.ordinal());
         int curEmpty = 49 - b.getColorNums(PieceState.RED) - b.getColorNums(PieceState.BLUE) - (49 - b.getUnblockedNum());
-         System.out.println(curEmpty);
+//         System.out.println(curEmpty);
         if (curEmpty >= 20) {
             if (getMyState() == PieceState.RED) {
                 minMax0(b, MAX_DEPTH+1, true, 1, -INFTY, INFTY);

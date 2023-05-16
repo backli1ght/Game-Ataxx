@@ -12,37 +12,22 @@ import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonBar;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Dialog;
-import javafx.scene.control.Label;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Polygon;
 import javafx.stage.Stage;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public class GUI extends Application implements CommandSource, View, Reporter {
     private Game game;
     //窗口布局容器
-    private BorderPane root;
-    private GridPane grid;
+    private BorderPane borderPane;
     private Stage primaryStage;
     //选择的棋子
-    private boolean isSelectBtn;
+    private boolean isSelectButton;
     private String selectData;
     //是否开启设置障碍的标志
     private boolean setBlockFlag;
@@ -50,17 +35,16 @@ public class GUI extends Application implements CommandSource, View, Reporter {
     private int redIndex = 0;   //  0 ==manual  1=ai
     private int blueIndex = 1; //   0 ==manual  1=ai
     //棋格索引，可以通过a1 b1值找到对应的棋格
-    private Map<String, Button> btnMap = new HashMap<>();
+    private final Map<String, Button> buttonMap = new HashMap<>();
 
     /**
      * 更新棋局界面
      *
-     * @param board
      */
     @Override
     public void update(Board board) {
-        setLeftBoard(root);
-        if (btnMap.isEmpty()) {
+        setBoard(borderPane);
+        if (buttonMap.isEmpty()) {
             return;
         }
         int rowMaxIndex = 104;
@@ -76,15 +60,15 @@ public class GUI extends Application implements CommandSource, View, Reporter {
                     continue;
                 }
                 if (stateName.equals("blocked")) {
-                    setBtnBlock(btnMap.get(ch1 + "" + colIndex));
+                    setButtonBlock(buttonMap.get(ch1 + "" + colIndex));
                 } else {
                     list.add(ch1 + "" + colIndex + "==========" + stateName);
-                    setBtnColor(btnMap.get(ch1 + "" + colIndex), stateName);
+                    setButtonColor(buttonMap.get(ch1 + "" + colIndex), stateName);
                 }
             }
         }
         String score = board.getScore();
-        setRightScore(root, "SCORE:" + score);
+        setBottomScore(borderPane, score);
     }
 
 
@@ -96,9 +80,9 @@ public class GUI extends Application implements CommandSource, View, Reporter {
     @Override
     public void announceWinner(PieceState state) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Game Over Dialog");
+        alert.setTitle("Game Over");
         alert.setHeaderText(null);
-        alert.setContentText(state.toString() + " is the Winner");
+        alert.setContentText(state.toString() + " Wins!");
         alert.showAndWait();
     }
 
@@ -121,51 +105,79 @@ public class GUI extends Application implements CommandSource, View, Reporter {
     /**
      * gui程序启动的入口
      *
-     * @param stage
-     * @throws Exception
      */
     @Override
     public void start(Stage stage) throws Exception {
-        root = new BorderPane();
+        borderPane = new BorderPane();
         primaryStage = stage;
-        setMenu(root);
-        setLeftBoard(root);
-        setRightScore(root, "SCORE: 0 red vs 0 blue");
-        Scene scene = new Scene(root, 700, 500);
+        setMenu(borderPane);
+        setBoard(borderPane);
+        setBottomScore(borderPane, "0 red vs 0 blue");
+        Scene scene = new Scene(borderPane, 390, 500);
         primaryStage.setScene(scene);
         primaryStage.setTitle("Ataxx Game");
-        primaryStage.setResizable(false);
+        primaryStage.setResizable(true);
         primaryStage.show();
     }
 
     /**
      * 设置右侧score得分信息
      *
-     * @param root    gui容器根容器
+     * @param borderPane    gui容器根容器
      * @param message 得分信息
      */
-    public void setRightScore(BorderPane root, String message) {
+    public void setBottomScore(BorderPane borderPane, String message) {
         VBox vBox = new VBox();
         vBox.setPrefWidth(350);
-        root.setRight(vBox);
-        Label label = new Label(message);
-        SStyleHelper.node(label).addStyle("-fx-font-size", "20px").apply();
-        label.setAlignment(Pos.CENTER);
-        vBox.getChildren().add(label);
+        borderPane.setBottom(vBox);
+
+        HBox hbox = new HBox();
+        hbox.setAlignment(Pos.CENTER);
+
+        String[] parts = message.split(" vs ");
+        Label redLabel = createColoredLabel(parts[0], Color.RED);
+        Label blueLabel = createColoredLabel(parts[1], Color.BLUE);
+        Label vsLable = createColoredLabel(" vs ", Color.GRAY);
+
+        redLabel.setPadding(new Insets(-30, 0, 0, 0));
+        blueLabel.setPadding(new Insets(-30, 0, 0, 0));
+        vsLable.setPadding(new Insets(-30, 0, 0, 0));
+
+        redLabel.setPrefHeight(70);
+        hbox.getChildren().addAll(redLabel, vsLable, blueLabel);
+        vBox.getChildren().add(hbox);
         vBox.setAlignment(Pos.CENTER);
+    }
+
+    private StackPane createLabelWrapper(Label label, double translationY) {
+        StackPane wrapper = new StackPane();
+        wrapper.getChildren().add(label);
+        wrapper.setTranslateY(translationY);
+        return wrapper;
+    }
+
+    private Label createColoredLabel(String text, Color color) {
+        Label label = new Label(text);
+        label.setStyle("-fx-font-size: 30px; -fx-font-family: 'Britannic Bold'; -fx-font-weight: bold; -fx-text-fill: " + toHexCode(color) + ";");
+        return label;
+    }
+
+    private String toHexCode(Color color) {
+        return String.format("#%02X%02X%02X", (int) (color.getRed() * 255), (int) (color.getGreen() * 255), (int) (color.getBlue() * 255));
     }
 
     /**
      * 设置左侧的棋局
      *
-     * @param root gui容器根容器
+     * @param borderPane gui容器根容器
      */
-    void setLeftBoard(BorderPane root) {
+    void setBoard(BorderPane borderPane) {
         VBox vBox = new VBox();
-        root.setLeft(vBox);
+//        borderPane.setCenter(vBox);
+        borderPane.setCenter(vBox);
         vBox.setAlignment(Pos.CENTER);
 
-        grid = new GridPane();
+        GridPane grid = new GridPane();
         grid.setPadding(new Insets(10));
         grid.setHgap(0);
         grid.setVgap(0);
@@ -202,74 +214,78 @@ public class GUI extends Application implements CommandSource, View, Reporter {
                 }
                 Button button = new Button("");
                 button.setUserData(ch1 + "" + rowIndex);    //通过button组建棋盘
-                button.setOnMouseClicked(mouseEvent -> {
-                    buttonClick(mouseEvent);
-                });
-                btnMap.put(button.getUserData().toString(), button);
+                button.setOnMouseClicked(this::buttonClick);
+                buttonMap.put(button.getUserData().toString(), button);
                 button.setPrefSize(40, 40);
                 GridPane.setConstraints(button, i, j);
                 grid.getChildren().add(button);
             }
         }
         vBox.getChildren().add(grid);
+        borderPane.setCenter(vBox);
     }
 
     /**
      * 在gui界面中添加菜单栏
      *
-     * @param root gui中的根容器
+     * @param borderPane gui中的根容器
      */
-    public void setMenu(BorderPane root) {
-        // 创建Game菜单项
-        MenuItem newItem = new MenuItem("New");
-        newItem.setOnAction(event -> {
-            setLeftBoard(root);
+    public void setMenu(BorderPane borderPane) {
+        // 创建工具栏
+        ToolBar toolBar = new ToolBar();
+
+        // 创建并添加按钮
+        Button newButton = new Button("New");
+        newButton.setOnAction(event -> {
+            setBoard(borderPane);
             this.game = new Game(this, this, this);
             game.newGame(redIndex, blueIndex);
-            if (redIndex == 1 && blueIndex == 0) { //表示ai先走，后面和人进行对战
+            if (redIndex == 1 && blueIndex == 0) {
                 game.aiRun();
             }
-            while (redIndex == 1 && blueIndex == 1) {  //ai 互相对战
+            while (redIndex == 1 && blueIndex == 1) {
                 boolean winnerAnnounced = game.aiRun();
                 if (winnerAnnounced) {
                     break;
                 }
             }
         });
-        MenuItem quitItem = new MenuItem("Quit");
-        quitItem.setOnAction(actionEvent -> {
-            primaryStage.close();
-        });
-        Menu gameMenu = new Menu("Game");
-        gameMenu.getItems().addAll(newItem, quitItem);
+        newButton.setPrefSize(90, 30);
 
-        // 创建Setting菜单项
-        MenuItem modeItem = new MenuItem("Mode");
-        modeItem.setOnAction(actionEvent -> {
+        toolBar.getItems().add(newButton);
+
+
+
+        Button modeButton = new Button("Mode");
+        modeButton.setOnAction(actionEvent -> {
             modeSetting();
         });
-        MenuItem blockItem = new MenuItem("Block");
-        blockItem.setOnAction(actionEvent -> {
-            setBlock(actionEvent);
-        });
-        Menu editMenu = new Menu("Setting");
-        editMenu.getItems().addAll(modeItem, blockItem);
+        toolBar.getItems().add(modeButton);
+        modeButton.setPrefSize(90, 30);
 
-        // 创建菜单栏
-        MenuBar menuBar = new MenuBar();
-        menuBar.getMenus().addAll(gameMenu, editMenu);
-        // 将菜单栏添加到布局中
-        root.setTop(menuBar);
+        Button blockButton = new Button("Block");
+        blockButton.setOnAction(this::setBlock);
+        toolBar.getItems().add(blockButton);
+        blockButton.setPrefSize(90, 30);
+
+        Button quitButton = new Button("Quit");
+        quitButton.setOnAction(actionEvent -> {
+            primaryStage.close();
+        });
+        toolBar.getItems().add(quitButton);
+        quitButton.setPrefSize(90, 30);
+
+        // 将工具栏添加到布局中
+        borderPane.setTop(toolBar);
     }
 
     /**
      * 设置障碍事件的菜单项，这个事件只是设置一个可以进行设置障碍的状态
      *
-     * @param event
      */
     public void setBlock(Event event) {
         setBlockFlag = true;
-        for (Button btn : btnMap.values()) {
+        for (Button btn : buttonMap.values()) {
             btn.setCursor(Cursor.CROSSHAIR);
         }
     }
@@ -281,7 +297,6 @@ public class GUI extends Application implements CommandSource, View, Reporter {
      * - 3.取消棋子的事件，棋子选择后在此选择为取消选择
      * - 4.移动选择的棋子到指定位置的事件
      *
-     * @param event
      */
     public void buttonClick(Event event) {
         Button btn = (Button) event.getSource();
@@ -289,21 +304,21 @@ public class GUI extends Application implements CommandSource, View, Reporter {
         if (setBlockFlag) {//触发设置障碍的事件
             game.block(promptData);
             setBlockFlag = false;
-            for (Button button : btnMap.values()) {
+            for (Button button : buttonMap.values()) {
                 button.setCursor(Cursor.DEFAULT);
             }
             return;
         }
-        if (isSelectBtn == false) {//触发选择棋子的事件
-            isSelectBtn = true;
+        if (!isSelectButton) {//触发选择棋子的事件
+            isSelectButton = true;
             SStyleHelper.node(btn).addStyle("-fx-border-color", "#c9dec1").apply();
             selectData = promptData;
             return;
         }
         if (promptData.equals(selectData)) {//取消棋子的事件，棋子选择后在此选择为取消选择
-            SStyleHelper.node(btnMap.get(selectData)).addStyle("-fx-border-color", "black").apply();
+            SStyleHelper.node(buttonMap.get(selectData)).addStyle("-fx-border-color", "black").apply();
             selectData = "";
-            isSelectBtn = false;
+            isSelectButton = false;
             return;
         }
         String moveStr = (selectData + "-" + promptData).toLowerCase(); //移动棋子
@@ -314,13 +329,13 @@ public class GUI extends Application implements CommandSource, View, Reporter {
             alert.setContentText("the move place is illegal,please move again.");
             alert.showAndWait();
             selectData = "";
-            isSelectBtn = false;
+            isSelectButton = false;
             return;
         }
         if (redIndex == 0) {
             game.manualRun(moveStr);
             selectData = "";
-            isSelectBtn = false;
+            isSelectButton = false;
             if (blueIndex == 1) {
                 game.aiRun();
             }
@@ -328,7 +343,7 @@ public class GUI extends Application implements CommandSource, View, Reporter {
         if (blueIndex == 0) {
             game.manualRun(moveStr);
             selectData = "";
-            isSelectBtn = false;
+            isSelectButton = false;
             if (redIndex == 1) {
                 game.aiRun();
             }
@@ -341,9 +356,9 @@ public class GUI extends Application implements CommandSource, View, Reporter {
      * @param button 需要设置颜色的棋格
      * @param color  设置的颜色
      */
-    public static void setBtnColor(Button button, String color) {
+    public static void setButtonColor(Button button, String color) {
         Circle circle = new Circle();
-        circle.setRadius(10);
+        circle.setRadius(11);
         SStyleHelper.node(circle).addStyle("-fx-fill", color).apply();
         // 将圆形设置为按钮的背景
         button.setBackground(null);
@@ -356,7 +371,7 @@ public class GUI extends Application implements CommandSource, View, Reporter {
      *
      * @param button 需要设置为障碍的棋子
      */
-    public static void setBtnBlock(Button button) {
+    public static void setButtonBlock(Button button) {
         double width = 20; // 宽度
         double height = 20; // 高度
         // 创建五角星形状
@@ -372,6 +387,32 @@ public class GUI extends Application implements CommandSource, View, Reporter {
                 0.3 * width, 0.6 * height,
                 0.0, 0.35 * height,
                 0.35 * width, 0.35 * height
+//
+////                0.2 * width, 0.0,
+////                0.4 * width, 0.0,
+////                0.6 * width, 0.2 * height,
+////                width, 0.2 * height,
+////                width, 0.8 * height,
+////                0.6 * width, 0.8 * height,
+////                0.4 * width, height,
+////                0.2 * width, height,
+////                0.2 * width, 0.8 * height,
+////                0.0, 0.8 * height,
+////                0.0, 0.2 * height,
+////                0.2 * width, 0.2 * height
+//
+////                0.2 * width, 0.0,
+////                0.5 * width, 0.15 * height,
+////                0.8 * width, 0.0,
+////                width, 0.3 * height,
+////                0.8 * width, 0.6 * height,
+////                width, height,
+////                0.5 * width, 0.85 * height,
+////                0.2 * width, height,
+////                0.0, 0.7 * height,
+////                0.0, 0.3 * height,
+////                0.2 * width, 0.15 * height
+//
         );
         SStyleHelper.node(star).addStyle("-fx-fill", "#7030a0").apply();
         button.setBackground(null);
@@ -394,21 +435,21 @@ public class GUI extends Application implements CommandSource, View, Reporter {
     public void modeSetting() {
         // 创建一个按钮
         Dialog<ButtonType> dialog = new Dialog<>();
-        dialog.setTitle("Mode Setting Dialog");
-        dialog.getDialogPane().setPrefSize(400, 200);
+        dialog.setTitle("Choose the Mode");
+        dialog.getDialogPane().setPrefSize(350, 150);
 
         // player mode
-        Label redLabel = new Label("Red Player:");
-        ComboBox<String> redBox = new ComboBox();
+        Label redLabel = new Label("Red:");
+        ComboBox<String> redBox = new ComboBox<>();
         redBox.setPrefWidth(240);
-        redBox.setItems(FXCollections.observableArrayList("manual", "ai"));
+        redBox.setItems(FXCollections.observableArrayList("Manual", "AI"));
         redBox.getSelectionModel().select(redIndex);
 
         //color mode
-        Label blueLabel = new Label("Blue Player:");
-        ComboBox<String> blueBox = new ComboBox();
+        Label blueLabel = new Label("Blue:");
+        ComboBox<String> blueBox = new ComboBox<>();
         blueBox.setPrefWidth(240);
-        blueBox.setItems(FXCollections.observableArrayList("manual", "ai"));
+        blueBox.setItems(FXCollections.observableArrayList("Manual", "AI"));
         blueBox.getSelectionModel().select(blueIndex);
 
         GridPane grid = new GridPane();
@@ -420,8 +461,8 @@ public class GUI extends Application implements CommandSource, View, Reporter {
         grid.add(blueBox, 2, 2);
         dialog.getDialogPane().setContent(grid);
 
-        ButtonType okButton = new ButtonType("保存", ButtonBar.ButtonData.OK_DONE);
-        ButtonType cancelButton = new ButtonType("不保存", ButtonBar.ButtonData.CANCEL_CLOSE);
+        ButtonType okButton = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
         dialog.getDialogPane().getButtonTypes().addAll(okButton, cancelButton);
 
         Optional<ButtonType> result = dialog.showAndWait();
@@ -430,6 +471,4 @@ public class GUI extends Application implements CommandSource, View, Reporter {
             blueIndex = blueBox.getSelectionModel().getSelectedIndex();
         }
     }
-
-
 }
